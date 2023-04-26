@@ -1,0 +1,139 @@
+name: Publish Tag
+
+on:
+  push:
+    tags: ['*']
+env:
+  IMAGE_NAME: ghcr.io/kingdonb/stats-tracker-ghcr
+  MANIFEST_NAME: ghcr.io/kingdonb/manifests/stats-tracker
+  BASE_TAG: base
+  GEMS_TAG: gems
+  GEM_CACHE_TAG: gem-cache
+  WABT_VERSION: 1.0.33
+  BINARYEN_VERSION: "113"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to write releases
+      id-token: write # needed for keyless signing
+      packages: write # needed for ghcr access
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@bc1dd263b68cb5626dbb55d5c89777d79372c484
+        with:
+          ruby-version: '3.1.4'
+          bundler-cache: true
+
+      - name: Prepare
+        id: prep
+        run: |
+          TAGGED=${GITHUB_REF/refs\/tags\//}
+          CFGTAG=$(rake app:version|awk '{print $3}')
+          if [[ "$TAGGED" != "$CFGTAG" ]]; then
+            echo "The config/version.yml does not match, double check the tag and try again."
+            exit 1
+          fi
+          echo BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') >> $GITHUB_OUTPUT
+          echo IMAGE_TAG=${CFGTAG} >> $GITHUB_OUTPUT
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          target: wasm32-wasi
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            lib/stat
+
+      - name: Add local bin to path (wasm-strip, wasm-opt)
+        shell: bash
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install wabt, binaryen
+        uses: kingdonb/setup-wabt@v1.0.5
+        with:
+          version: ${{ env.WABT_VERSION }}
+          version2: ${{ env.BINARYEN_VERSION }}
+
+      - name: Copy to path (wasm-strip, wasm-opt)
+        shell: bash
+        run: |
+          cp "${HOME}/.wabt_${{ env.WABT_VERSION }}/bin/wasm-strip" "${HOME}/.local/bin"
+          cp "${HOME}/.binaryen_${{ env.BINARYEN_VERSION }}/bin/wasm-opt" "${HOME}/.local/bin"
+
+      - name: Build Wasm
+        shell: bash
+        run: |
+          make -C lib stat.wasm
+          cp lib/stat.wasm "${HOME}/.local/bin"
+
+      - name: Build and push tag
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          sbom: true
+          provenance: true
+          push: true
+          builder: ${{ steps.buildx.outputs.name }}
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.prep.outputs.IMAGE_TAG }}
+          target: deploy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            CACHE_IMAGE=${{ env.IMAGE_NAME }}:${{ env.GEMS_TAG }}
+
+      - name: Upload Wasm binary to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          release_name: v${{ steps.prep.outputs.IMAGE_TAG }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: lib/stat.wasm
+          asset_name: stat.wasm
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Install flux
+        uses: fluxcd/flux2/action@main
+
+      - name: Publish Flux OCI artifact to GHCR
+        run: |
+          flux push artifact oci://$MANIFEST_NAME:${{ steps.prep.outputs.IMAGE_TAG }} \
+            --path="./deploy" \
+            --source="${{ github.event.repository.html_url }}" \
+            --revision="${GITHUB_REF_NAME}/${GITHUB_SHA}"
+          flux tag artifact oci://$MANIFEST_NAME:${{ steps.prep.outputs.IMAGE_TAG }} --tag latest
+
+      - name: Sign OCI artifacts
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign $IMAGE_NAME:${{ steps.prep.outputs.IMAGE_TAG }} --yes
+          cosign sign $MANIFEST_NAME:${{ steps.prep.outputs.IMAGE_TAG }} --yes

@@ -1,5 +1,5 @@
 require 'wasmer'
-require 'pry'
+# require 'pry'
 
 # prelude.rb
 class AssertionError < RuntimeError
@@ -25,7 +25,7 @@ def capturing_output
 
       stdout.read
     rescue RuntimeError
-      raise ScriptError.new stdout.read, stderr.read, $!.message
+      raise ScriptError, "#{stdout.read}, #{stderr.read}, #{$!.message}"
     end
   ensure
     $stdout.reopen old_stdout
@@ -33,11 +33,15 @@ def capturing_output
   end
 end
 
-def wasmer_current_download_count(html)
+def wasmer_current_download_count(html, repo, image)
   # Save the html to a file: cache/content
   content_dir = 'cache'
-  cache = File.expand_path content_dir, File.dirname(__FILE__)
-  cache_file = File.join(cache, 'content')
+  target_dir = File.join(content_dir, repo, image)
+  cache_dir = File.expand_path target_dir, File.dirname(__FILE__)
+  # binding.pry
+  FileUtils.mkdir_p target_dir
+
+  cache_file = File.join(target_dir, 'content')
   IO.write(cache_file, html.read)
 
   # Load our web assembly "stat" from the stat/ rust package
@@ -52,16 +56,23 @@ def wasmer_current_download_count(html)
   wasi_env =
     Wasmer::Wasi::StateBuilder.new('stats')
       .argument('html/content')
-      .map_directory('html', cache)
+      .map_directory('html', target_dir)
       .finalize
   import_object = wasi_env.generate_import_object store, wasi_version
 
   # Call the Wasm (it may use the system interface for IO)
   instance = Wasmer::Instance.new module_, import_object
   # results = instance.exports.count_from_html.()
-  returned_string = capturing_output do
-    instance.exports._start.()
-  end.chomp
+
+  ## It turns out that Source Controller has >i32.max downloads (!)
+  # begin
+    returned_string = capturing_output do
+      instance.exports._start.()
+    end.chomp
+  # rescue ScriptError => e
+  #   binding.pry
+  #   raise e
+  # end
 
   return returned_string
 end

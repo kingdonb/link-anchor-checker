@@ -1,0 +1,16 @@
+---
+kind: Project
+apiVersion: example.com/v1alpha1
+metadata:
+  name: "fluxcd"
+spec:
+  projectName: "fluxcd"
+---
+kind: Leaf
+apiVersion: example.com/v1alpha1
+metadata:
+  name: "source-controller"
+spec:
+  repoName: "source-controller"
+  projectName: "fluxcd"
+  packageName: "source-controller"

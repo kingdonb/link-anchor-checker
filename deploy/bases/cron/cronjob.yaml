@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stats-tracker-ghcr
+spec:
+  schedule: "9 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: "stats-tracker-ghcr"
+          containers:
+            - name: stathcr
+              image: ghcr.io/kingdonb/stats-tracker-ghcr:canary
+              imagePullPolicy: IfNotPresent
+              #args:
+              #  - "-v=3"
+              #  - --privateKeyPath=/etc/secret-volume/privatekey.pem
+              env:
+              - name: NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: RAILS_ENV
+                value: production
+              envFrom:
+              - secretRef:
+                  name: stats-tracker
+              securityContext:
+                allowPrivilegeEscalation: false
+              #volumeMounts:
+              #  - mountPath: /etc/secret-volume
+              #    name: secret-volume
+          restartPolicy: OnFailure
+          #volumes:
+          #  - name: secret-volume
+          #    secret:
+          #      secretName: github-app-private-key
