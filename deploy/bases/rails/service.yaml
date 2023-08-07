@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: stats-viewer
-  name: stats-viewer
+    app: report-viewer
+  name: report-viewer
 spec:
   type: ClusterIP
   selector:
-    app: stats-viewer
+    app: report-viewer
   ports:
   - name: http
     port: 80

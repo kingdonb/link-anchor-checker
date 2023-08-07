@@ -25,12 +25,12 @@ on:
           - gems
 
 env:
-  IMAGE_TAG: ghcr.io/kingdonb/stats-tracker-ghcr
+  IMAGE_TAG: ghcr.io/kingdonb/link-checker
   BASE_TAG: base
   GEMS_TAG: gems
   GEM_CACHE_TAG: gem-cache
-  WABT_VERSION: 1.0.33
-  BINARYEN_VERSION: "113"
+  # WABT_VERSION: 1.0.33
+  # BINARYEN_VERSION: "113"
   DOCKER_TARGET: deploy
   CACHE_TAG: gems
 

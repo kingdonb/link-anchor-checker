@@ -26,7 +26,7 @@ on:
           - gem-cache
           - gems
 env:
-  IMAGE_TAG: ghcr.io/kingdonb/stats-tracker-ghcr
+  IMAGE_TAG: ghcr.io/kingdonb/link-checker
   BASE_TAG: base
   GEMS_TAG: gems
   GEM_CACHE_TAG: gem-cache
