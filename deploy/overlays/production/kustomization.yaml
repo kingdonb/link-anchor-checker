@@ -8,7 +8,7 @@ resources:
   - ../../bases/cron
   - namespace.yaml
 images:
-- name: ghcr.io/kingdonb/stats-tracker-ghcr
-  newName: ghcr.io/kingdonb/stats-tracker-ghcr
+- name: ghcr.io/kingdonb/link-checker
+  newName: ghcr.io/kingdonb/link-checker
   newTag: 0.1.7
 patches: []

@@ -4,13 +4,11 @@ on:
   push:
     tags: ['*']
 env:
-  IMAGE_NAME: ghcr.io/kingdonb/stats-tracker-ghcr
-  MANIFEST_NAME: ghcr.io/kingdonb/manifests/stats-tracker
+  IMAGE_NAME: ghcr.io/kingdonb/link-anchor-checker
+  MANIFEST_NAME: ghcr.io/kingdonb/manifests/link-checker
   BASE_TAG: base
   GEMS_TAG: gems
   GEM_CACHE_TAG: gem-cache
-  WABT_VERSION: 1.0.33
-  BINARYEN_VERSION: "113"
 
 jobs:
   release:
@@ -55,42 +53,6 @@ jobs:
           echo BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') >> $GITHUB_OUTPUT
           echo IMAGE_TAG=${CFGTAG} >> $GITHUB_OUTPUT
 
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache: false
-          target: wasm32-wasi
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            lib/stat
-
-      - name: Add local bin to path (wasm-strip, wasm-opt)
-        shell: bash
-        run: |
-          mkdir -p "${HOME}/.local/bin"
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-
-      - name: Install wabt, binaryen
-        uses: kingdonb/setup-wabt@v1.0.5
-        with:
-          version: ${{ env.WABT_VERSION }}
-          version2: ${{ env.BINARYEN_VERSION }}
-
-      - name: Copy to path (wasm-strip, wasm-opt)
-        shell: bash
-        run: |
-          cp "${HOME}/.wabt_${{ env.WABT_VERSION }}/bin/wasm-strip" "${HOME}/.local/bin"
-          cp "${HOME}/.binaryen_${{ env.BINARYEN_VERSION }}/bin/wasm-opt" "${HOME}/.local/bin"
-
-      - name: Build Wasm
-        shell: bash
-        run: |
-          make -C lib stat.wasm
-          cp lib/stat.wasm "${HOME}/.local/bin"
-
       - name: Build and push tag
         uses: docker/build-push-action@v4
         with:
@@ -106,17 +68,6 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             CACHE_IMAGE=${{ env.IMAGE_NAME }}:${{ env.GEMS_TAG }}
-
-      - name: Upload Wasm binary to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          release_name: v${{ steps.prep.outputs.IMAGE_TAG }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: lib/stat.wasm
-          asset_name: stat.wasm
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: ""
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3

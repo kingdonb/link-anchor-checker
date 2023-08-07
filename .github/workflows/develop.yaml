@@ -65,61 +65,61 @@ jobs:
         with:
           ruby-version: '3.1.4'
 
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        if: "${{ github.event.inputs.dockerTarget == 'base' }}"
-        with:
-          target: wasm32-wasi
+      # - name: Set up Rust
+      #   uses: actions-rust-lang/setup-rust-toolchain@v1
+      #   if: "${{ github.event.inputs.dockerTarget == 'base' }}"
+      #   with:
+      #     target: wasm32-wasi
 
-      - name: Add local bin to path (wasm-strip, wasm-opt)
-        shell: bash
-        if: "${{ github.event.inputs.dockerTarget == 'base'}}"
-        run: |
-          mkdir -p "${HOME}/.local/bin"
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      # - name: Add local bin to path (wasm-strip, wasm-opt)
+      #   shell: bash
+      #   if: "${{ github.event.inputs.dockerTarget == 'base'}}"
+      #   run: |
+      #     mkdir -p "${HOME}/.local/bin"
+      #     echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
-      - name: Restore Cache (binaries) wasm-opt, wasm-strip, stat.wasm
-        uses: actions/cache/restore@v3
-        id: cache-restore
-        if: "${{ github.event.inputs.dockerTarget != 'base' }}"
-        with:
-          path: "/home/runner/.local/bin"
-          key: ${{ runner.os }}-wabt_${{ env.WABT_VERSION }}
+      # - name: Restore Cache (binaries) wasm-opt, wasm-strip, stat.wasm
+      #   uses: actions/cache/restore@v3
+      #   id: cache-restore
+      #   if: "${{ github.event.inputs.dockerTarget != 'base' }}"
+      #   with:
+      #     path: "/home/runner/.local/bin"
+      #     key: ${{ runner.os }}-wabt_${{ env.WABT_VERSION }}
 
-      - name: Cache (binaries) wasm-opt, wasm-strip, stat.wasm
-        uses: actions/cache@v3
-        id: cache
-        if: "${{ github.event.inputs.dockerTarget == 'base' }}"
-        with:
-          path: "/home/runner/.local/bin"
-          key: ${{ runner.os }}-wabt_${{ env.WABT_VERSION }}
+      # - name: Cache (binaries) wasm-opt, wasm-strip, stat.wasm
+      #   uses: actions/cache@v3
+      #   id: cache
+      #   if: "${{ github.event.inputs.dockerTarget == 'base' }}"
+      #   with:
+      #     path: "/home/runner/.local/bin"
+      #     key: ${{ runner.os }}-wabt_${{ env.WABT_VERSION }}
 
-      - name: Install wabt, binaryen
-        uses: kingdonb/setup-wabt@v1.0.5
-        if: "${{ github.event.inputs.dockerTarget == 'base' && steps.cache.outputs.cache-hit != 'true' }}"
-        with:
-          version: ${{ env.WABT_VERSION }}
-          version2: ${{ env.BINARYEN_VERSION }}
+      # - name: Install wabt, binaryen
+      #   uses: kingdonb/setup-wabt@v1.0.5
+      #   if: "${{ github.event.inputs.dockerTarget == 'base' && steps.cache.outputs.cache-hit != 'true' }}"
+      #   with:
+      #     version: ${{ env.WABT_VERSION }}
+      #     version2: ${{ env.BINARYEN_VERSION }}
 
-      - name: Copy to path (wasm-strip, wasm-opt)
-        shell: bash
-        if: "${{ github.event.inputs.dockerTarget == 'base' && steps.cache.outputs.cache-hit != 'true' }}"
-        run: |
-          cp "${HOME}/.wabt_${{ env.WABT_VERSION }}/bin/wasm-strip" "${HOME}/.local/bin"
-          cp "${HOME}/.binaryen_${{ env.BINARYEN_VERSION }}/bin/wasm-opt" "${HOME}/.local/bin"
+      # - name: Copy to path (wasm-strip, wasm-opt)
+      #   shell: bash
+      #   if: "${{ github.event.inputs.dockerTarget == 'base' && steps.cache.outputs.cache-hit != 'true' }}"
+      #   run: |
+      #     cp "${HOME}/.wabt_${{ env.WABT_VERSION }}/bin/wasm-strip" "${HOME}/.local/bin"
+      #     cp "${HOME}/.binaryen_${{ env.BINARYEN_VERSION }}/bin/wasm-opt" "${HOME}/.local/bin"
 
-      - name: Build Wasm
-        shell: bash
-        if: "${{ github.event.inputs.dockerTarget == 'base'}}"
-        run: |
-          make -C lib stat.wasm
-          cp lib/stat.wasm "${HOME}/.local/bin"
+      # - name: Build Wasm
+      #   shell: bash
+      #   if: "${{ github.event.inputs.dockerTarget == 'base'}}"
+      #   run: |
+      #     make -C lib stat.wasm
+      #     cp lib/stat.wasm "${HOME}/.local/bin"
 
-      - name: Restore Wasm
-        shell: bash
-        if: "${{ github.event.inputs.dockerTarget != 'base'}}"
-        run: |
-          cp "${HOME}/.local/bin/stat.wasm" lib/stat.wasm
+      # - name: Restore Wasm
+      #   shell: bash
+      #   if: "${{ github.event.inputs.dockerTarget != 'base'}}"
+      #   run: |
+      #     cp "${HOME}/.local/bin/stat.wasm" lib/stat.wasm
 
       - name: Build and push canary
         uses: docker/build-push-action@v4

@@ -2,23 +2,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: stats-viewer
-  name: stats-viewer
+    app: report-viewer
+  name: report-viewer
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stats-viewer
+      app: report-viewer
   strategy: {}
   template:
     metadata:
       labels:
-        app: stats-viewer
+        app: report-viewer
     spec:
-      serviceAccountName: "stats-tracker-ghcr"
+      serviceAccountName: "link-checker"
       containers:
-      - image: ghcr.io/kingdonb/stats-tracker-ghcr:canary
-        name: statsview
+      - image: ghcr.io/kingdonb/link-checker:canary
+        name: reportview
         command: ["bundle"]
         args: ["exec", "rails", "server", "-b", "0.0.0.0"]
         env:
@@ -26,7 +26,7 @@ spec:
           value: production
         envFrom:
         - secretRef:
-            name: stats-tracker
+            name: report-viewer
         securityContext:
           allowPrivilegeEscalation: false
         ports:

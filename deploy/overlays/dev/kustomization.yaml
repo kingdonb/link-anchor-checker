@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: stats-dev
+namespace: links-dev
 resources:
   - ../../bases/crds
   - ../../bases/rails
@@ -20,7 +20,7 @@ patches:
         value: development
   target:
     kind: CronJob
-    name: stats-tracker-ghcr
+    name: link-checker
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/env/0
@@ -29,15 +29,15 @@ patches:
         value: development
   target:
     kind: Deployment
-    name: stats-viewer
+    name: report-viewer
 - patch: |
     - op: replace
       path: /spec/jobTemplate/spec/template/spec/containers/0/imagePullPolicy
       value: Always
   target:
     kind: CronJob
-    name: stats-tracker-ghcr
+    name: link-checker
 images:
-- name: ghcr.io/kingdonb/stats-tracker-ghcr
-  newName: ghcr.io/kingdonb/stats-tracker-ghcr
+- name: ghcr.io/kingdonb/link-checker
+  newName: ghcr.io/kingdonb/link-checker
   newTag: canary

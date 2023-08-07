@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: stats-tracker-ghcr
+  name: link-checker
 spec:
   schedule: "9 * * * *"
   concurrencyPolicy: Forbid
@@ -9,10 +9,10 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: "stats-tracker-ghcr"
+          serviceAccountName: "link-checker"
           containers:
             - name: stathcr
-              image: ghcr.io/kingdonb/stats-tracker-ghcr:canary
+              image: ghcr.io/kingdonb/link-checker:canary
               imagePullPolicy: IfNotPresent
               #args:
               #  - "-v=3"
@@ -26,7 +26,7 @@ spec:
                 value: production
               envFrom:
               - secretRef:
-                  name: stats-tracker
+                  name: link-checker
               securityContext:
                 allowPrivilegeEscalation: false
               #volumeMounts:

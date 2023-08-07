@@ -3,27 +3,27 @@ kind: Ingress
 metadata:
   annotations:
     # nginx.ingress.kubernetes.io/rewrite-target: /
-  name: stats-viewer
+  name: report-viewer
   namespace: default
 spec:
   ingressClassName: public
   rules:
-  - host: stats.hephy.pro
+  - host: report.hephy.pro
     http:
       paths:
       - backend:
           service:
-            name: stats-viewer
+            name: report-viewer
             port:
               number: 80
         path: /
         pathType: Prefix
-  - host: ruby.hephy.pro
+  - host: reports.hephy.pro
     http:
       paths:
       - backend:
           service:
-            name: stats-viewer
+            name: report-viewer
             port:
               number: 80
         path: /

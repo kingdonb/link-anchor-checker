@@ -1,12 +1,15 @@
 name: Execute
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "2 * * * *"
+  push:
+    branches: []
+      # - never-execute
+  # workflow_dispatch:
+  # schedule:
+  #   - cron: "2 * * * *"
 env:
   RAILS_ENV: production
-  REPO_NAME: kingdonb/stats-tracker-ghcr
+  REPO_NAME: kingdonb/link-anchor-checker
 
 jobs:
   components:
