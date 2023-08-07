@@ -25,7 +25,7 @@ gem 'fiber_scheduler' #, github: "bruno-/fiber_scheduler", branch: "main" # use 
 gem 'io-event'
 gem 'connection_pool'
 
-gem 'wasmer'
+# gem 'wasmer'
 gem 'thor'
 
 gem 'dotenv-rails', groups: [:development, :test]
