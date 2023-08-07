@@ -2,8 +2,8 @@ name: Execute
 
 on:
   push:
-    branches: []
-      # - never-execute
+    branches:
+      - never-execute
   # workflow_dispatch:
   # schedule:
   #   - cron: "2 * * * *"
